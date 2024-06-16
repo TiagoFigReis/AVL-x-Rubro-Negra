@@ -22,9 +22,7 @@ struct avl {
 avl *criaArvore()
 {
     avl *arv;
-
     arv = (avl*)malloc(sizeof(avl));
-
     if (!arv)
     {
         return NULL;
@@ -36,12 +34,11 @@ avl *criaArvore()
     {
         return NULL;
     }
-
+    // Inicialização das variáveis, sentinela->Fdir é a raiz da árvore
     arv->sentinela->pai = arv->sentinela->Fdir = arv->sentinela->Fesq = NULL;
     arv->sentinela->chave = -1000;
     arv->numElementos = 0;
     arv->sentinela->fb = 0;
-
     return arv;
 }
 
@@ -54,7 +51,7 @@ int insereNo(avl *arv, int valor, long int *count)
     {
         return 0;
     }
-
+    // Inicialização das variáveis
     novo_no->chave = valor;
     novo_no->Fdir = novo_no->Fesq = NULL;
     novo_no->pai = arv->sentinela;
@@ -63,13 +60,17 @@ int insereNo(avl *arv, int valor, long int *count)
 
     if (!arv->sentinela->Fdir)
     {
+        // Não há raiz, então o nó a inserir é a raiz da árvore
         arv->sentinela->Fdir = novo_no;
         return 1;
     }
 
     aux = arv->sentinela->Fdir;
+    // Achando o lugar que deve ser inserido o novo nó
     while (aux)
     {
+        // É importante manter quem é o pai do nó a inserir, então novo_no->pai é atualizado a cada iteração para
+        // guardar o pai de aux
         novo_no->pai = aux;
         if (aux->chave > valor)
         {
@@ -79,6 +80,7 @@ int insereNo(avl *arv, int valor, long int *count)
         }
     }
 
+    // Verificando se o novo_no é filho a esquerda ou a direita
     if (novo_no->pai->chave > valor)
     {
         novo_no->pai->Fesq = novo_no;
@@ -86,6 +88,7 @@ int insereNo(avl *arv, int valor, long int *count)
         novo_no->pai->Fdir = novo_no;
     }
 
+    // Atualizar o fator de balanceamento
     atualizaFB_insercao(arv, novo_no, count);
     return 1;
 }
@@ -102,6 +105,7 @@ int removeNo(avl *arv, int valor, long int *count)
     }
 
     aux = arv->sentinela->Fdir;
+    // Encontrando o nó com o valor a remover
     while (aux && aux->chave != valor)
     {
         if (aux->chave > valor)
@@ -129,7 +133,7 @@ int removeNo(avl *arv, int valor, long int *count)
         } else {
             aux->pai->Fdir = NULL;
         }
-
+        // Atualizar o fator de balanceamento
         atualizaFB_remocao(arv, aux->pai, valor, count);
         free(aux);
         return 1;
@@ -146,7 +150,7 @@ int removeNo(avl *arv, int valor, long int *count)
         }
 
         aux->Fesq->pai = aux->pai;
-
+        // Atualizar o fator de balanceamento
         atualizaFB_remocao(arv, aux->pai, valor, count);
         free(aux);
         return 1;
@@ -163,18 +167,19 @@ int removeNo(avl *arv, int valor, long int *count)
         }
 
         aux->Fdir->pai = aux->pai;
-
+        // Atualizar o fator de balanceamento
         atualizaFB_remocao(arv, aux->pai, valor, count);
         free(aux);
         return 1;
     }
     // Possui os dois filhos
+    // Procurar o sucessor (nó mais a esquerda do filho a direita)
     sucessor = aux->Fdir;
     while (sucessor->Fesq)
     {
         sucessor = sucessor->Fesq;
     }
-
+    // Copiando a chave do sucessor para o nó removido
     aux->chave = sucessor->chave;
 
     if (sucessor->pai == aux)
@@ -192,7 +197,7 @@ int removeNo(avl *arv, int valor, long int *count)
             sucessor->Fdir->pai = sucessor->pai;
         }
     }
-
+    // Atualizar o fb considerando o sucessor como o nó removido
     atualizaFB_remocao(arv, sucessor->pai, sucessor->chave,count);
     free(sucessor);
 
@@ -254,6 +259,8 @@ void atualizaFB_insercao(avl *arv, no *novoNo, long int *count)
     no *aux = novoNo;
 
     do {
+        // Atualizar o fator de balanceamento considerando de qual lado foi inserido o nó
+        // Se foi a esquerda então subtrai 1, soma 1 caso contrário
         if (aux->pai->chave > novoNo->chave)
         {
             aux->pai->fb--;
@@ -261,10 +268,13 @@ void atualizaFB_insercao(avl *arv, no *novoNo, long int *count)
             aux->pai->fb++;
         }
         aux = aux->pai;
-    }  while (aux->fb != 2 && aux->fb != -2 && aux != arv->sentinela->Fdir && aux->fb != 0);
+        // Condição de parada se o nó desbalanceou, fb = -2 ou 2, se o fb é igual a 0, sem alteração dos nós acima
+        // desse nó com fb = 0, ou se atingiu a raiz.
+    }  while ((aux->fb == 1 || aux->fb == -1) && aux != arv->sentinela->Fdir);
 
     if (aux->fb == 2 || aux->fb == -2)
     {
+        // Se desbalanceou, realiza o balanceamento
         balanceamento(arv, aux, count);
     }
 
@@ -279,6 +289,7 @@ void balanceamento(avl *arv, no *noDesbal, long int *count)
 
     if (noDesbal->fb == 2)
     {
+        // Desbalanceamento à direita
         filho = noDesbal->Fdir;
         if (filho->fb == -1)
         {
@@ -286,8 +297,10 @@ void balanceamento(avl *arv, no *noDesbal, long int *count)
             neto = filho->Fesq;
             fbNeto = neto->fb;
             neto->fb = 0;
+            // Rotação dupla
             rotacaoDir(filho);
             rotacaoEsq(noDesbal);
+            // Atualizando os fbs dos nós envolvidos na rotação
             if (fbNeto == -1)
             {
                 filho->fb = 1;
@@ -301,6 +314,7 @@ void balanceamento(avl *arv, no *noDesbal, long int *count)
             }
         } else {
             (*count)++;
+            // Rotação Simples
             rotacaoEsq(noDesbal);
             if (filho->fb == 1)
             {
@@ -311,7 +325,7 @@ void balanceamento(avl *arv, no *noDesbal, long int *count)
             }
         }
     } else {
-        // fb == -2
+        // fb == -2 (Desbalanceamento à esquerda)
         filho = noDesbal->Fesq;
         if (filho->fb == 1)
         {
@@ -319,8 +333,10 @@ void balanceamento(avl *arv, no *noDesbal, long int *count)
             neto = filho->Fdir;
             fbNeto = neto->fb;
             neto->fb = 0;
+            // Rotação Dupla
             rotacaoEsq(filho);
             rotacaoDir(noDesbal);
+            // Atualizando os fbs dos nós envolvidos na rotação
             if (fbNeto == -1)
             {
                 noDesbal->fb = 1;
@@ -333,6 +349,7 @@ void balanceamento(avl *arv, no *noDesbal, long int *count)
             }
         } else {
             (*count)++;
+            // Rotação Simples
             rotacaoDir(noDesbal);
             if (filho->fb == -1)
             {
@@ -405,28 +422,33 @@ void atualizaFB_remocao(avl *arv, no *pai, int chaveRemovida, long int *count) {
     {
         return;
     }
-
+    // Atualizar o fb do pai
     if (pai->chave > chaveRemovida) {
         pai->fb++;
     } else {
         pai->fb--;
     }
-
+    // Sair do while se o fb desbalanceou (fb = 2 ou -2), se fb = 1 ou -1, sem necessidade de continuar a atualização
+    // do fb ou se atingiu a raiz
     while (aux->fb == 0 && aux != arv->sentinela->Fdir)
     {
         aux = aux->pai;
         if (aux->chave > chaveRemovida) {
+            // Nó removido a esquerda, somar 1 ao fb
             aux->fb++;
         } else {
+            // Nó removido a direita, subtrair 1 ao fb
             aux->fb--;
         }
     }
 
     if (aux->fb == 2 || aux->fb == -2)
     {
+        // Nó desbalanceado, realizar o balanceamento
         balanceamento(arv, aux, count);
         if ((aux->pai != arv->sentinela) && (aux->pai->fb == 0))
         {
+            // Se não atingiu nenhuma das condições de parada especificadas anteriormente, continuar a atualizar o fb
             atualizaFB_remocao(arv, aux->pai->pai, chaveRemovida, count);
         }
     }
