@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "AVL/avl.h"
-#include "RubroNegra/Rubro.h"
-#include "GerarVetor/gerarvetor.h"
+#include "avl.h"
+#include "Rubro.h"
+#include "gerarvetor.h"
 #include "iniciarteste.h"
 
 struct metrica{

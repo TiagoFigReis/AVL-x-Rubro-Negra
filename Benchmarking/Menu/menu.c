@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Menu.h"
-#include "IniciarTestes/iniciarteste.h"
+#include "iniciarteste.h"
 
 void menu() {
     int cod, n, *tam1,*tam2;
